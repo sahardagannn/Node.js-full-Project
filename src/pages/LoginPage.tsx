@@ -21,33 +21,32 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     const { email, password } = formData;
-
-    // Validation
+  
     if (!email || !password) {
       setError('Email and Password are required');
       return;
     }
-
+  
     setLoading(true);
     setError(null);
-
+  
     try {
       const response = await fetch('http://localhost:5000/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+  
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Login failed');
       }
-
+  
       const data = await response.json();
-      localStorage.setItem('token', data.token);
-      // עדכון מצב התחברות דרך הקונטקסט ושמירת ה-JWT
-      login(data.token);
-
+  
+      // עדכון מצב התחברות דרך הקונטקסט ושמירת ה-JWT וה-userId
+      login(data.token, data.user.id);
+  
       console.log('Login successful');
       alert('Login successful! Welcome back.');
       navigate('/');
@@ -57,6 +56,7 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <Box sx={{ maxWidth: 400, margin: 'auto', padding: 2 }}>

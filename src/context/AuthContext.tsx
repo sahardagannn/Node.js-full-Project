@@ -2,35 +2,43 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 
 interface AuthContextProps {
   isLoggedIn: boolean;
-  login: (token: string) => void; // הוספת token כפרמטר לפונקציה login
+  login: (token: string, userId: string) => void; // הוספת userId כפרמטר
   logout: () => void;
+  userId: string | null; // שמירת userId בקונטקסט
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     // שחזור מצב התחברות מ-localStorage
     const token = localStorage.getItem('token');
-    if (token) {
+    const storedUserId = localStorage.getItem('userId'); // שחזור userId
+    if (token && storedUserId) {
       setIsLoggedIn(true);
+      setUserId(storedUserId);
     }
   }, []);
 
-  const login = (token: string) => {
+  const login = (token: string, userId: string) => {
     localStorage.setItem('token', token); // שמירת ה-JWT ב-localStorage
+    localStorage.setItem('userId', userId); // שמירת ה-userId ב-localStorage
     setIsLoggedIn(true);
+    setUserId(userId); // עדכון userId בקונטקסט
   };
 
   const logout = () => {
     localStorage.removeItem('token'); // מחיקת ה-JWT
+    localStorage.removeItem('userId'); // מחיקת ה-userId
     setIsLoggedIn(false);
+    setUserId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, userId }}>
       {children}
     </AuthContext.Provider>
   );
