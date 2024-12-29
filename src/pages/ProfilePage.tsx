@@ -12,6 +12,7 @@ interface UserProfile {
     city: string;
     street: string;
     houseNumber: string;
+    zip?: string;
   };
   image: { url: string; alt: string };
 }
@@ -28,6 +29,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const response = await fetch('http://localhost:5000/api/users/profile', {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -86,6 +88,8 @@ const ProfilePage: React.FC = () => {
         ...profile,
         address: { ...profile.address, [name]: value },
       });
+    } else if (name === 'alt') {
+      setProfile({ ...profile, image: { ...profile.image, alt: value } });
     } else {
       setProfile({ ...profile, [name]: value });
     }
@@ -201,6 +205,14 @@ const ProfilePage: React.FC = () => {
                 onChange={(e) =>
                   setProfile({ ...profile, image: { ...profile.image, url: e.target.value } })
                 }
+              />
+              <TextField
+                label="Alt Text"
+                name="alt"
+                fullWidth
+                margin="normal"
+                value={profile.image.alt}
+                onChange={handleInputChange}
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
                 <Button variant="contained" color="primary" onClick={handleUpdateProfile}>

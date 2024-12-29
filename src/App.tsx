@@ -6,6 +6,7 @@ import CardsPage from './pages/CardsPage.tsx';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage.tsx';
+import MyFavoritesPage from './pages/MyFavoritesPage';
 
 const App: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const App: React.FC = () => {
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/favorites" element={<MyFavoritesPage />} />
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/login" element={<LoginPage />} />

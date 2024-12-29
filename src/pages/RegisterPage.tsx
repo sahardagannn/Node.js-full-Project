@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, CircularProgress, FormControlLabel, Checkbox } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: {
       first: '',
@@ -86,6 +88,7 @@ const RegisterPage: React.FC = () => {
       // On successful registration
       console.log('Registration successful');
       alert('Registration successful!');
+      navigate('/login'); 
     } catch (err: any) {
       setError(err.message);
     } finally {

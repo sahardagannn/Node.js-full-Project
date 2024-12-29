@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // ייבוא הקונטקסט
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth(); // שימוש בפונקציית login מהקונטקסט
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -40,12 +44,13 @@ const LoginPage: React.FC = () => {
       }
 
       const data = await response.json();
-
-      // Save JWT Token
       localStorage.setItem('token', data.token);
+      // עדכון מצב התחברות דרך הקונטקסט ושמירת ה-JWT
+      login(data.token);
 
       console.log('Login successful');
       alert('Login successful! Welcome back.');
+      navigate('/');
     } catch (err: any) {
       setError(err.message);
     } finally {

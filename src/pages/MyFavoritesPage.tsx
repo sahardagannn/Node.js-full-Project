@@ -7,13 +7,9 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Button,
   CircularProgress,
 } from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 interface CardData {
   _id: string;
@@ -25,83 +21,62 @@ interface CardData {
   likes: string[]; // Array of user IDs
 }
 
-const HomePage: React.FC = () => {
+const MyFavoritesPage: React.FC = () => {
   const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
-  const [cards, setCards] = useState<CardData[]>([]);
+  const [favorites, setFavorites] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) return; // רק משתמש מחובר יכול לראות כרטיסים
-    fetchCards();
+    fetchFavorites();
   }, [isLoggedIn]);
 
-  const fetchCards = async () => {
+  const fetchFavorites = async () => {
     setLoading(true);
     setError(null);
-
+  
     try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        throw new Error('User ID is missing in localStorage');
+      }
+  
+      console.log('Current User ID:', userId);
+  
       const response = await fetch('http://localhost:5000/api/cards', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-
+  
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Failed to fetch cards');
       }
-
-      const data = await response.json();
-      setCards(data);
+  
+      const data: CardData[] = await response.json();
+      console.log('Fetched Cards:', data);
+  
+      const likedCards = data.filter(
+        (card) => card.likes && card.likes.includes(userId)
+      );
+  
+      console.log('Liked Cards:', likedCards);
+      setFavorites(likedCards);
     } catch (err: any) {
+      console.error(err.message);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleLike = async (cardId: string) => {
-    try {
-      console.log(`Sending like request for card: ${cardId}`); // לוג לזיהוי קריאה
   
-      const response = await fetch(`http://localhost:5000/api/cards/${cardId}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-  
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error('Error Response:', errorResponse); // לוג לשגיאה
-        throw new Error(errorResponse.message || 'Failed to like card');
-      }
-  
-      const updatedCard = await response.json();
-      console.log('Updated Card:', updatedCard); // לוג לכרטיס המעודכן
-  
-      // עדכון הכרטיסים במצב המקומי
-      setCards((prevCards) =>
-        prevCards.map((card) => (card._id === updatedCard._id ? updatedCard : card))
-      );
-    } catch (err: any) {
-      console.error('Error:', err.message); // לוג לשגיאה
-      alert(err.message);
-    }
-  };
-  
-
-  const handleView = (cardId: string) => {
-    navigate(`/cards/${cardId}`); // מעבר לדף פרטי כרטיס
-  };
-
   if (!isLoggedIn) {
     return (
       <Box sx={{ textAlign: 'center', marginTop: 4 }}>
         <Typography variant="h6" color="error">
-          Please log in to view the cards.
+          Please log in to view your favorite cards.
         </Typography>
       </Box>
     );
@@ -123,13 +98,23 @@ const HomePage: React.FC = () => {
     );
   }
 
+  if (favorites.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', marginTop: 4 }}>
+        <Typography variant="h6">
+          You have no favorite cards yet.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ padding: 2 }}>
       <Typography variant="h4" gutterBottom>
-        All Cards
+        My Favorite Cards
       </Typography>
       <Grid container spacing={2}>
-        {cards.map((card) => (
+        {favorites.map((card) => (
           <Grid item xs={12} sm={6} md={4} key={card._id}>
             <Card>
               <CardMedia
@@ -150,30 +135,6 @@ const HomePage: React.FC = () => {
                   {`${card.address.street}, ${card.address.city}, ${card.address.country}`}
                 </Typography>
               </CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 1 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => handleView(card._id)}
-                >
-                  View
-                </Button>
-                <Button
-  variant="text"
-  color="secondary"
-  onClick={() => handleLike(card._id)}
-  startIcon={
-    card.likes.includes(localStorage.getItem('userId') || '') ? (
-      <FavoriteIcon />
-    ) : (
-      <FavoriteBorderIcon />
-    )
-  }
->
-  {card.likes.includes(localStorage.getItem('userId') || '') ? 'Unlike' : 'Like'}
-</Button>
-
-              </Box>
             </Card>
           </Grid>
         ))}
@@ -182,4 +143,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage;
+export default MyFavoritesPage;

@@ -1,6 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Card, CardContent, CardMedia, Button, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Fab,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import CreateCardForm from '../components/CreateCardForm';
 
 interface CardData {
   _id: string;
@@ -15,6 +30,7 @@ const CardsPage: React.FC = () => {
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDialog, setShowDialog] = useState(false); // For opening the form dialog
 
   const fetchCards = async () => {
     setLoading(true);
@@ -38,6 +54,30 @@ const CardsPage: React.FC = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateCard = async (card: any) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(card),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create card');
+      }
+
+      const newCard = await response.json();
+      setCards((prevCards) => [...prevCards, newCard]); // Add the new card to the state
+      setShowDialog(false); // Close the dialog
+      alert('Card created successfully!');
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -131,6 +171,22 @@ const CardsPage: React.FC = () => {
           </Grid>
         ))}
       </Grid>
+      {/* Floating Action Button */}
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        onClick={() => setShowDialog(true)}
+      >
+        <AddIcon />
+      </Fab>
+      {/* Dialog for Create Card */}
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
+        <DialogTitle>Create New Card</DialogTitle>
+        <DialogContent>
+          <CreateCardForm onCreate={handleCreateCard} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
