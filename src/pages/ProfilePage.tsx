@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Typography, CircularProgress, Avatar } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  CircularProgress,
+  Avatar,
+} from '@mui/material';
 
 interface UserProfile {
-  firstName: string;
-  lastName: string;
+  name: { first: string; middle?: string; last: string };
   email: string;
   phone: string;
   address: {
@@ -88,6 +94,11 @@ const ProfilePage: React.FC = () => {
         ...profile,
         address: { ...profile.address, [name]: value },
       });
+    } else if (name in profile.name) {
+      setProfile({
+        ...profile,
+        name: { ...profile.name, [name]: value },
+      });
     } else if (name === 'alt') {
       setProfile({ ...profile, image: { ...profile.image, alt: value } });
     } else {
@@ -133,18 +144,26 @@ const ProfilePage: React.FC = () => {
             <>
               <TextField
                 label="First Name"
-                name="firstName"
+                name="first"
                 fullWidth
                 margin="normal"
-                value={profile.firstName}
+                value={profile.name.first}
+                onChange={handleInputChange}
+              />
+              <TextField
+                label="Middle Name"
+                name="middle"
+                fullWidth
+                margin="normal"
+                value={profile.name.middle || ''}
                 onChange={handleInputChange}
               />
               <TextField
                 label="Last Name"
-                name="lastName"
+                name="last"
                 fullWidth
                 margin="normal"
-                value={profile.lastName}
+                value={profile.name.last}
                 onChange={handleInputChange}
               />
               <TextField
@@ -225,7 +244,9 @@ const ProfilePage: React.FC = () => {
             </>
           ) : (
             <>
-              <Typography variant="body1">Name: {profile.firstName} {profile.lastName}</Typography>
+              <Typography variant="body1">
+                Name: {profile.name.first} {profile.name.middle || ''} {profile.name.last}
+              </Typography>
               <Typography variant="body1">Email: {profile.email}</Typography>
               <Typography variant="body1">Phone: {profile.phone}</Typography>
               <Typography variant="body1">

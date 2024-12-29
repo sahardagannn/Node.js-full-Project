@@ -35,27 +35,36 @@ const CardsPage: React.FC = () => {
   const fetchCards = async () => {
     setLoading(true);
     setError(null);
-
+  
     try {
+      const userId = localStorage.getItem('userId'); // מזהה המשתמש הנוכחי
+      if (!userId) {
+        throw new Error('User ID is missing in localStorage');
+      }
+  
       const response = await fetch('http://localhost:5000/api/cards', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`, // Send token for authentication
         },
       });
-
+  
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Failed to fetch cards');
       }
-
+  
       const data = await response.json();
-      setCards(data);
+  
+      // סינון הכרטיסים שהמשתמש יצר
+      const myCards = data.filter((card: { owner: string; }) => card.owner === userId);
+      setCards(myCards);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleCreateCard = async (card: any) => {
     try {
