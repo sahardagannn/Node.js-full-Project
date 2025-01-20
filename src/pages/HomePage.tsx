@@ -93,7 +93,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleClosePopup = () => {
-    setSelectedCard(null); // סגירת ה-Popup
+    setSelectedCard(null); // סגירת ה-Popu
   };
 
   if (!isLoggedIn) {
