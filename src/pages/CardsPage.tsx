@@ -17,56 +17,54 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import CreateCardForm from '../components/CreateCardForm';
 
-interface CardData {
-  _id: string;
+interface CardFormData {
   title: string;
   subtitle: string;
   description: string;
+  phone: string;
+  email: string;
+  web: string;
   image: { url: string; alt: string };
-  address: { country: string; city: string; street: string; houseNumber: string };
+  address: { state: string; country: string; city: string; street: string; houseNumber: string; zip: string };
+}
+
+interface CardData extends CardFormData {
+  _id: string;
 }
 
 const CardsPage: React.FC = () => {
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDialog, setShowDialog] = useState(false); // For opening the form dialog
+  const [showDialog, setShowDialog] = useState(false);
+  const [editCard, setEditCard] = useState<CardData | null>(null);
 
   const fetchCards = async () => {
     setLoading(true);
     setError(null);
-  
+
     try {
-      const userId = localStorage.getItem('userId'); // מזהה המשתמש הנוכחי
-      if (!userId) {
-        throw new Error('User ID is missing in localStorage');
-      }
-  
-      const response = await fetch('http://localhost:5000/api/cards', {
+      const response = await fetch('http://localhost:5000/api/cards/my-cards', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`, // Send token for authentication
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Failed to fetch cards');
       }
-  
+
       const data = await response.json();
-  
-      // סינון הכרטיסים שהמשתמש יצר
-      const myCards = data.filter((card: { owner: string; }) => card.owner === userId);
-      setCards(myCards);
+      setCards(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-  
 
-  const handleCreateCard = async (card: any) => {
+  const handleCreateCard = async (card: CardFormData) => {
     try {
       const response = await fetch('http://localhost:5000/api/cards', {
         method: 'POST',
@@ -82,9 +80,35 @@ const CardsPage: React.FC = () => {
       }
 
       const newCard = await response.json();
-      setCards((prevCards) => [...prevCards, newCard]); // Add the new card to the state
-      setShowDialog(false); // Close the dialog
+      setCards((prevCards) => [...prevCards, newCard]);
+      setShowDialog(false);
       alert('Card created successfully!');
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleEditCard = async (updatedCard: CardData) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/cards/${updatedCard._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(updatedCard),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update card');
+      }
+
+      const updatedData = await response.json();
+      setCards((prevCards) =>
+        prevCards.map((card) => (card._id === updatedData._id ? updatedData : card))
+      );
+      setEditCard(null);
+      alert('Card updated successfully!');
     } catch (err: any) {
       alert(err.message);
     }
@@ -105,7 +129,6 @@ const CardsPage: React.FC = () => {
         throw new Error('Failed to delete card');
       }
 
-      // Remove the deleted card from the state
       setCards((prevCards) => prevCards.filter((card) => card._id !== cardId));
       alert('Card deleted successfully');
     } catch (err: any) {
@@ -161,18 +184,10 @@ const CardsPage: React.FC = () => {
                 </Typography>
               </CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: 1 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => alert(`View card: ${card._id}`)}
-                >
-                  View
+                <Button variant="contained" color="primary" onClick={() => setEditCard(card)}>
+                  Edit
                 </Button>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => handleDeleteCard(card._id)}
-                >
+                <Button variant="outlined" color="secondary" onClick={() => handleDeleteCard(card._id)}>
                   Delete
                 </Button>
               </Box>
@@ -180,7 +195,6 @@ const CardsPage: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-      {/* Floating Action Button */}
       <Fab
         color="primary"
         aria-label="add"
@@ -189,11 +203,21 @@ const CardsPage: React.FC = () => {
       >
         <AddIcon />
       </Fab>
-      {/* Dialog for Create Card */}
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
         <DialogTitle>Create New Card</DialogTitle>
         <DialogContent>
-          <CreateCardForm onCreate={handleCreateCard} />
+          <CreateCardForm onCreate={(card) => handleCreateCard(card as CardFormData)} />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!editCard} onClose={() => setEditCard(null)}>
+        <DialogTitle>Edit Card</DialogTitle>
+        <DialogContent>
+          {editCard && (
+            <CreateCardForm
+              initialData={editCard}
+              onCreate={(updatedCard) => handleEditCard(updatedCard as CardData)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Box>

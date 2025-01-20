@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography } from '@mui/material';
 
-interface Card {
+interface CardFormData {
   title: string;
   subtitle: string;
   description: string;
@@ -19,21 +20,41 @@ interface Card {
   };
 }
 
-interface CardFormProps {
-  onCreate: (card: Card) => void;
+interface CardData extends CardFormData {
+  _id: string;
 }
 
-const CreateCardForm: React.FC<CardFormProps> = ({ onCreate }) => {
-  const [formData, setFormData] = useState<Card>({
-    title: '',
-    subtitle: '',
-    description: '',
-    phone: '',
-    email: '',
-    web: '',
-    image: { url: '', alt: '' },
-    address: { state: '', country: '', city: '', street: '', houseNumber: '', zip: '' },
-  });
+interface CardFormProps {
+  onCreate: (card: CardFormData | CardData) => void;
+  initialData?: CardData;
+}
+
+const CreateCardForm: React.FC<CardFormProps> = ({ onCreate, initialData }) => {
+  const [formData, setFormData] = useState<CardFormData>(
+    initialData || {
+      title: '',
+      subtitle: '',
+      description: '',
+      phone: '',
+      email: '',
+      web: '',
+      image: { url: '', alt: '' },
+      address: {
+        state: '',
+        country: '',
+        city: '',
+        street: '',
+        houseNumber: '',
+        zip: '',
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,7 +63,6 @@ const CreateCardForm: React.FC<CardFormProps> = ({ onCreate }) => {
       setFormData((prev) => ({
         ...prev,
         [parent]: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ...(prev as any)[parent],
           [child]: value,
         },
@@ -60,7 +80,7 @@ const CreateCardForm: React.FC<CardFormProps> = ({ onCreate }) => {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, margin: 'auto', padding: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Create New Card
+        {initialData ? 'Edit Card' : 'Create New Card'}
       </Typography>
       <TextField label="Title" name="title" fullWidth margin="normal" value={formData.title} onChange={handleInputChange} />
       <TextField label="Subtitle" name="subtitle" fullWidth margin="normal" value={formData.subtitle} onChange={handleInputChange} />
@@ -77,7 +97,7 @@ const CreateCardForm: React.FC<CardFormProps> = ({ onCreate }) => {
       <TextField label="House Number" name="address.houseNumber" fullWidth margin="normal" value={formData.address.houseNumber} onChange={handleInputChange} />
       <TextField label="Zip" name="address.zip" fullWidth margin="normal" value={formData.address.zip} onChange={handleInputChange} />
       <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }}>
-        Create Card
+        {initialData ? 'Update Card' : 'Create Card'}
       </Button>
     </Box>
   );

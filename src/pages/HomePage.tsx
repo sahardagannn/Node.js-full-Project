@@ -9,11 +9,14 @@ import {
   CardMedia,
   Button,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 interface CardData {
   _id: string;
@@ -27,13 +30,13 @@ interface CardData {
 
 const HomePage: React.FC = () => {
   const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCard, setSelectedCard] = useState<CardData | null>(null); // כרטיס שנבחר להצגה ב-Popup
 
   useEffect(() => {
-    if (!isLoggedIn) return; // רק משתמש מחובר יכול לראות כרטיסים
+    if (!isLoggedIn) return;
     fetchCards();
   }, [isLoggedIn]);
 
@@ -64,37 +67,33 @@ const HomePage: React.FC = () => {
 
   const handleLike = async (cardId: string) => {
     try {
-      console.log(`Sending like request for card: ${cardId}`); // לוג לזיהוי קריאה
-  
       const response = await fetch(`http://localhost:5000/api/cards/${cardId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
-        console.error('Error Response:', errorResponse); // לוג לשגיאה
         throw new Error(errorResponse.message || 'Failed to like card');
       }
-  
+
       const updatedCard = await response.json();
-      console.log('Updated Card:', updatedCard); // לוג לכרטיס המעודכן
-  
-      // עדכון הכרטיסים במצב המקומי
       setCards((prevCards) =>
         prevCards.map((card) => (card._id === updatedCard._id ? updatedCard : card))
       );
     } catch (err: any) {
-      console.error('Error:', err.message); // לוג לשגיאה
       alert(err.message);
     }
   };
-  
 
-  const handleView = (cardId: string) => {
-    navigate(`/cards/${cardId}`); // מעבר לדף פרטי כרטיס
+  const handleOpenPopup = (card: CardData) => {
+    setSelectedCard(card); // פתיחת ה-Popup עם כרטיס שנבחר
+  };
+
+  const handleClosePopup = () => {
+    setSelectedCard(null); // סגירת ה-Popup
   };
 
   if (!isLoggedIn) {
@@ -154,30 +153,56 @@ const HomePage: React.FC = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => handleView(card._id)}
+                  onClick={() => handleOpenPopup(card)} // פתיחת ה-Popup
                 >
                   View
                 </Button>
                 <Button
-  variant="text"
-  color="secondary"
-  onClick={() => handleLike(card._id)}
-  startIcon={
-    card.likes.includes(localStorage.getItem('userId') || '') ? (
-      <FavoriteIcon />
-    ) : (
-      <FavoriteBorderIcon />
-    )
-  }
->
-  {card.likes.includes(localStorage.getItem('userId') || '') ? 'Unlike' : 'Like'}
-</Button>
-
+                  variant="text"
+                  color="secondary"
+                  onClick={() => handleLike(card._id)}
+                  startIcon={
+                    card.likes.includes(localStorage.getItem('userId') || '') ? (
+                      <FavoriteIcon />
+                    ) : (
+                      <FavoriteBorderIcon />
+                    )
+                  }
+                >
+                  {card.likes.includes(localStorage.getItem('userId') || '') ? 'Unlike' : 'Like'}
+                </Button>
               </Box>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {/* חלון Popup */}
+      <Dialog open={!!selectedCard} onClose={handleClosePopup}>
+        {selectedCard && (
+          <>
+            <DialogTitle>{selectedCard.title}</DialogTitle>
+            <DialogContent>
+              <Typography variant="subtitle1">{selectedCard.subtitle}</Typography>
+              <Typography variant="body2">{selectedCard.description}</Typography>
+              <Typography variant="body2">
+                Address: {`${selectedCard.address.street}, ${selectedCard.address.city}, ${selectedCard.address.country}`}
+              </Typography>
+              <CardMedia
+                component="img"
+                alt={selectedCard.image.alt}
+                image={selectedCard.image.url || 'https://via.placeholder.com/150'}
+                sx={{ marginTop: 2 }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleClosePopup} color="primary">
+                Close
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 };

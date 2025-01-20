@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Avatar,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Avatar, Button } from '@mui/material';
+import EditProfileForm from '../components/EditProfileForm';
 
 interface UserProfile {
   name: { first: string; middle?: string; last: string };
@@ -22,6 +16,7 @@ interface UserProfile {
   };
   image: { url: string; alt: string };
 }
+
 
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -55,10 +50,10 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleUpdateProfile = async () => {
+  const handleUpdateProfile = async (updatedProfile: UserProfile) => {
     setLoading(true);
     setError(null);
-
+  
     try {
       const response = await fetch('http://localhost:5000/api/users/profile', {
         method: 'PUT',
@@ -66,14 +61,14 @@ const ProfilePage: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(updatedProfile),
       });
-
+  
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Failed to update profile');
       }
-
+  
       const updatedData = await response.json();
       setProfile(updatedData);
       setEditing(false);
@@ -84,27 +79,7 @@ const ProfilePage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!profile) return;
-    const { name, value } = e.target;
-
-    if (name in profile.address) {
-      setProfile({
-        ...profile,
-        address: { ...profile.address, [name]: value },
-      });
-    } else if (name in profile.name) {
-      setProfile({
-        ...profile,
-        name: { ...profile.name, [name]: value },
-      });
-    } else if (name === 'alt') {
-      setProfile({ ...profile, image: { ...profile.image, alt: value } });
-    } else {
-      setProfile({ ...profile, [name]: value });
-    }
-  };
+  
 
   useEffect(() => {
     fetchProfile();
@@ -141,107 +116,11 @@ const ProfilePage: React.FC = () => {
             />
           </Box>
           {editing ? (
-            <>
-              <TextField
-                label="First Name"
-                name="first"
-                fullWidth
-                margin="normal"
-                value={profile.name.first}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Middle Name"
-                name="middle"
-                fullWidth
-                margin="normal"
-                value={profile.name.middle || ''}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Last Name"
-                name="last"
-                fullWidth
-                margin="normal"
-                value={profile.name.last}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Email"
-                name="email"
-                fullWidth
-                margin="normal"
-                value={profile.email}
-                onChange={handleInputChange}
-                type="email"
-              />
-              <TextField
-                label="Phone"
-                name="phone"
-                fullWidth
-                margin="normal"
-                value={profile.phone}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Country"
-                name="country"
-                fullWidth
-                margin="normal"
-                value={profile.address.country}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="City"
-                name="city"
-                fullWidth
-                margin="normal"
-                value={profile.address.city}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Street"
-                name="street"
-                fullWidth
-                margin="normal"
-                value={profile.address.street}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="House Number"
-                name="houseNumber"
-                fullWidth
-                margin="normal"
-                value={profile.address.houseNumber}
-                onChange={handleInputChange}
-              />
-              <TextField
-                label="Image URL"
-                name="url"
-                fullWidth
-                margin="normal"
-                value={profile.image.url}
-                onChange={(e) =>
-                  setProfile({ ...profile, image: { ...profile.image, url: e.target.value } })
-                }
-              />
-              <TextField
-                label="Alt Text"
-                name="alt"
-                fullWidth
-                margin="normal"
-                value={profile.image.alt}
-                onChange={handleInputChange}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                <Button variant="contained" color="primary" onClick={handleUpdateProfile}>
-                  Save
-                </Button>
-                <Button variant="outlined" color="secondary" onClick={() => setEditing(false)}>
-                  Cancel
-                </Button>
-              </Box>
-            </>
+            <EditProfileForm
+              initialData={profile}
+              onSave={handleUpdateProfile}
+              onCancel={() => setEditing(false)}
+            />
           ) : (
             <>
               <Typography variant="body1">

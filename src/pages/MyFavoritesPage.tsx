@@ -7,8 +7,10 @@ import {
   Card,
   CardContent,
   CardMedia,
+  Button,
   CircularProgress,
 } from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from '../context/AuthContext';
 
 interface CardData {
@@ -35,43 +37,62 @@ const MyFavoritesPage: React.FC = () => {
   const fetchFavorites = async () => {
     setLoading(true);
     setError(null);
-  
+
     try {
       const userId = localStorage.getItem('userId');
       if (!userId) {
         throw new Error('User ID is missing in localStorage');
       }
-  
-      console.log('Current User ID:', userId);
-  
+
       const response = await fetch('http://localhost:5000/api/cards', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         throw new Error(errorResponse.message || 'Failed to fetch cards');
       }
-  
+
       const data: CardData[] = await response.json();
-      console.log('Fetched Cards:', data);
-  
       const likedCards = data.filter(
         (card) => card.likes && card.likes.includes(userId)
       );
-  
-      console.log('Liked Cards:', likedCards);
+
       setFavorites(likedCards);
     } catch (err: any) {
-      console.error(err.message);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const handleUnlike = async (cardId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/cards/${cardId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.message || 'Failed to unlike card');
+      }
+
+      const updatedCard = await response.json();
+
+      // הסרת הכרטיס מרשימת המועדפים
+      setFavorites((prevFavorites) =>
+        prevFavorites.filter((card) => card._id !== updatedCard._id)
+      );
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   if (!isLoggedIn) {
     return (
       <Box sx={{ textAlign: 'center', marginTop: 4 }}>
@@ -135,6 +156,16 @@ const MyFavoritesPage: React.FC = () => {
                   {`${card.address.street}, ${card.address.city}, ${card.address.country}`}
                 </Typography>
               </CardContent>
+              <Box sx={{ padding: 1, textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<FavoriteIcon />}
+                  onClick={() => handleUnlike(card._id)}
+                >
+                  Unlike
+                </Button>
+              </Box>
             </Card>
           </Grid>
         ))}
